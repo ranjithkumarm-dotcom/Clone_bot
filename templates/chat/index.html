@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>ChatGPT Clone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: #343541;
+            color: #ececf1;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background: #202123;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #4d4d4f;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .sidebar-header {
+            padding: 0.5rem;
+        }
+
+        .new-chat-button {
+            width: 100%;
+            background: transparent;
+            border: 1px solid #565869;
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: #ececf1;
+            font-size: 0.875rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s;
+        }
+
+        .new-chat-button:hover {
+            background: #343541;
+        }
+
+        .new-chat-icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0.5rem 0;
+        }
+
+        .chat-history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .chat-history-header:hover {
+            background: #2a2b32;
+        }
+
+        .chat-history-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #8e8ea0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .chat-history-chevron {
+            color: #8e8ea0;
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+        }
+
+        .chat-history-chevron.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .chat-list-container {
+            max-height: none;
+            overflow: visible;
+        }
+
+        .chat-list-container.collapsed {
+            display: none;
+        }
+
+        .chat-item {
+            padding: 0.75rem 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0.125rem 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.2s;
+            position: relative;
+            min-height: 2.5rem;
+        }
+
+        .chat-item:hover {
+            background: #343541;
+        }
+
+        .chat-item.active {
+            background: #343541;
+        }
+
+        .chat-item-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.875rem;
+            color: #ececf1;
+            padding-right: 0.5rem;
+        }
+
+        .chat-item-actions {
+            display: none;
+            gap: 0.25rem;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .chat-item:hover .chat-item-actions {
+            display: flex;
+        }
+
+        .chat-item-action {
+            background: transparent;
+            border: none;
+            color: #8e8ea0;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: color 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+        }
+
+        .chat-item-action:hover {
+            color: #ececf1;
+            background: #565869;
+        }
+
+        .sidebar-footer {
+            padding: 0.75rem;
+            border-top: 1px solid #4d4d4f;
+            background: #202123;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .user-profile:hover {
+            background: #343541;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #565869;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ececf1;
+            font-size: 0.875rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 0.875rem;
+            color: #ececf1;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #202123;
+            padding: 1rem;
+            border-bottom: 1px solid #4d4d4f;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #ececf1;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem 4rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.3s ease-in;
+            align-items: flex-start;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* AI messages align to left */
+        .ai-message {
+            justify-content: flex-start;
+            flex-direction: row;
+        }
+
+        /* User messages align to right */
+        .user-message {
+            justify-content: flex-end;
+            flex-direction: row;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .user-avatar {
+            background: #19c37d;
+        }
+
+        .ai-avatar {
+            background: #ab68ff;
+        }
+
+        .message-content {
+            max-width: 50%;
+            min-width: 0;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            flex-shrink: 1;
+        }
+
+        .user-message .message-content {
+            color: #ececf1;
+        }
+
+        .ai-message .message-content {
+            color: #d1d5db;
+        }
+
+        .input-container {
+            background: #202123;
+            padding: 1rem;
+            border-top: 1px solid #4d4d4f;
+        }
+
+        /* File attachment popup - ChatGPT style */
+        .file-attachment-popup {
+            display: none;
+            margin-bottom: 0.75rem;
+            padding: 0 4rem;
+        }
+
+        .file-attachment-popup.show {
+            display: block;
+        }
+
+        .file-attachments-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .file-attachment-bubble {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #40414f;
+            border: 1px solid #565869;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            max-width: 300px;
+            min-width: 200px;
+            animation: slideDown 0.2s ease-out;
+            position: relative;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-attachment-icon {
+            width: 40px;
+            height: 40px;
+            background: #565869;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-attachment-icon.pdf::before {
+            content: '📕';
+            font-size: 1.5rem;
+        }
+
+        .file-attachment-icon.word::before {
+            content: '📘';
+            font-size: 1.5rem;
+        }
+
+        .file-attachment-icon.excel::before {
+            content: '📗';
+            font-size: 1.5rem;
+        }
+
+        .file-attachment-icon.text::before {
+            content: '📄';
+            font-size: 1.5rem;
+        }
+
+        .file-attachment-icon.default::before {
+            content: '📄';
+            font-size: 1.5rem;
+        }
+
+        .file-attachment-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-attachment-name {
+            color: #ececf1;
+            font-size: 0.875rem;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-bottom: 0.125rem;
+        }
+
+        .file-attachment-type {
+            color: #8e8ea0;
+            font-size: 0.75rem;
+        }
+
+        .file-attachment-remove {
+            width: 24px;
+            height: 24px;
+            background: #2a2b32;
+            border: none;
+            border-radius: 50%;
+            color: #8e8ea0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .file-attachment-remove:hover {
+            background: #3a3b42;
+            color: #ececf1;
+        }
+
+        .input-wrapper {
+            width: 100%;
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-end;
+            padding: 0 4rem;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .input-box {
+            flex: 1;
+            background: #40414f;
+            border: 1px solid #565869;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            color: #ececf1;
+            font-size: 1rem;
+            resize: none;
+            min-height: 52px;
+            max-height: 200px;
+            font-family: inherit;
+            outline: none;
+        }
+
+        .input-box:focus {
+            border-color: #10a37f;
+        }
+
+        .input-box::placeholder {
+            color: #8e8ea0;
+        }
+
+        .send-button {
+            background: #19c37d;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            height: 52px;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background: #15a06a;
+        }
+
+        .send-button:disabled {
+            background: #565869;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ef4444;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Scrollbar styling */
+        .chat-container::-webkit-scrollbar,
+        .chat-history::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-container::-webkit-scrollbar-track,
+        .chat-history::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb,
+        .chat-history::-webkit-scrollbar-thumb {
+            background: #565869;
+            border-radius: 4px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb:hover,
+        .chat-history::-webkit-scrollbar-thumb:hover {
+            background: #6e6e80;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #8e8ea0;
+            font-size: 0.875rem;
+        }
+
+        /* Document upload styles */
+        .upload-button {
+            background: transparent;
+            border: 1px solid #565869;
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: #ececf1;
+            cursor: pointer;
+            transition: all 0.2s;
+            height: 52px;
+            width: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 300;
+            position: relative;
+        }
+
+        .upload-button:hover {
+            background: #343541;
+            border-color: #10a37f;
+            transform: scale(1.05);
+        }
+
+        .upload-button:active {
+            transform: scale(0.95);
+        }
+
+        .upload-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .upload-button.has-document {
+            border-color: #19c37d;
+            background: rgba(25, 195, 125, 0.1);
+        }
+
+        .upload-button.has-document::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 8px;
+            height: 8px;
+            background: #19c37d;
+            border-radius: 50%;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .document-item {
+            background: #40414f;
+            border: 1px solid #565869;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .document-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .document-name {
+            color: #ececf1;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .document-meta {
+            color: #8e8ea0;
+            font-size: 0.75rem;
+        }
+
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .doc-action-btn {
+            background: #565869;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            color: #ececf1;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .doc-action-btn:hover:not(:disabled) {
+            background: #6e6e80;
+        }
+
+        .doc-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+
+        .upload-progress {
+            display: none;
+            color: #8e8ea0;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: #2a2b32;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .upload-progress.show {
+            display: block;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <button class="new-chat-button" id="newChatButton">
+                <span class="new-chat-icon">+</span>
+                <span>New chat</span>
+            </button>
+        </div>
+        <div class="chat-history" id="chatHistory">
+            <div class="chat-history-header" id="chatHistoryHeader">
+                <span class="chat-history-title">Your chats</span>
+                <span class="chat-history-chevron" id="chatHistoryChevron">▼</span>
+            </div>
+            <div class="chat-list-container" id="chatListContainer">
+                <div id="chatList"></div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar" id="userAvatar"></div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">{{ user.username }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>ChatGPT Clone</h1>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="color: #8e8ea0; font-size: 0.875rem;">Welcome, {{ user.username }}</span>
+                <a href="{% url 'logout' %}" style="background: #565869; color: #ececf1; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-size: 0.875rem; transition: background 0.2s;" onmouseover="this.style.background='#6e6e80'" onmouseout="this.style.background='#565869'">Logout</a>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message ai-message">
+                <div class="message-avatar ai-avatar">AI</div>
+                <div class="message-content">Hello! I'm your AI assistant. How can I help you today?</div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="error-message" id="errorMessage"></div>
+            <div class="file-attachment-popup" id="fileAttachmentPopup">
+                <div class="file-attachments-container" id="fileAttachmentsContainer">
+                    <!-- File attachments will be dynamically added here -->
+                </div>
+            </div>
+            <div class="input-wrapper">
+                <button id="uploadButton" class="upload-button" title="Upload Document (PDF, DOC, TXT, etc.)">+</button>
+                <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.bmp" multiple>
+                <textarea 
+                    id="messageInput" 
+                    class="input-box" 
+                    placeholder="Message ChatGPT..."
+                    rows="1"
+                ></textarea>
+                <button id="sendButton" class="send-button">Send</button>
+            </div>
+            <div class="upload-progress" id="uploadProgress"></div>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const errorMessage = document.getElementById('errorMessage');
+        const newChatButton = document.getElementById('newChatButton');
+        const chatList = document.getElementById('chatList');
+        
+        let conversationHistory = [];
+        let currentChatId = null;
+        let chats = [];
+
+        // Load chats from database
+        async function loadChats() {
+            try {
+                const response = await fetch('/api/chats/');
+                if (response.status === 403 || response.status === 401) {
+                    // User is not authenticated, redirect to login
+                    window.location.href = '/login/';
+                    return;
+                }
+                if (!response.ok) {
+                    // If unauthorized, redirect to login
+                    if (response.status === 302 || response.status === 401 || response.status === 403) {
+                        window.location.href = '/login/';
+                        return;
+                    }
+                    throw new Error(`Failed to load chats: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.status === 'success') {
+                    chats = data.chats;
+                }
+                renderChatList();
+            } catch (error) {
+                console.error('Error loading chats:', error);
+                // If authentication error, redirect to login
+                if (error.message.includes('403') || error.message.includes('401') || error.message.includes('302')) {
+                    window.location.href = '/login/';
+                    return;
+                }
+                renderChatList();
+            }
+        }
+
+        // Save chat to database
+        async function saveChatToDB(chatId, title, messages, history) {
+            try {
+                const response = await fetch(`/api/chats/${chatId}/save/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        messages: messages,
+                        history: history
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = { error: errorText || `Server error: ${response.status}` };
+                    }
+                    throw new Error(errorData.error || `Failed to save chat: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // Reload chats list
+                    await loadChats();
+                } else {
+                    throw new Error(data.error || 'Failed to save chat');
+                }
+            } catch (error) {
+                console.error('Error saving chat:', error);
+                // Don't show error to user for save operations to avoid interrupting chat flow
+                // Only log it for debugging
+            }
+        }
+
+        // Generate chat ID
+        function generateChatId() {
+            return 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Get chat title from first message
+        function getChatTitle(message) {
+            if (!message) return 'New Chat';
+            const maxLength = 30;
+            return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
+        }
+
+        // Clear documents for a chat
+        async function clearChatDocuments(chatId) {
+            if (!chatId) return;
+            try {
+                await fetch('/api/documents/clear-chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ chat_id: chatId })
+                });
+            } catch (error) {
+                console.error('Error clearing chat documents:', error);
+            }
+        }
+
+        // Create new chat
+        async function createNewChat() {
+            // Clear documents for the previous chat if it existed
+            if (currentChatId) {
+                await clearChatDocuments(currentChatId);
+            }
+            
+            currentChatId = generateChatId();
+            conversationHistory = [];
+            
+            // Clear local document state
+            activeDocuments = [];
+            documents = [];
+            currentDocumentId = null;
+            updateUploadButtonState();
+            
+            chatContainer.innerHTML = '<div class="message ai-message"><div class="message-avatar ai-avatar">AI</div><div class="message-content">Hello! I\'m your AI assistant. How can I help you today?</div></div>';
+            messageInput.value = '';
+            messageInput.focus();
+            renderChatList();
+        }
+
+        // Load chat from database
+        async function loadChat(chatId) {
+            try {
+                // Clear documents for the previous chat if switching chats
+                if (currentChatId && currentChatId !== chatId) {
+                    await clearChatDocuments(currentChatId);
+                }
+                
+                // Show loading state
+                chatContainer.innerHTML = '<div class="message ai-message"><div class="message-avatar ai-avatar">AI</div><div class="message-content">Loading conversation...</div></div>';
+                
+                const response = await fetch(`/api/chats/${chatId}/`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = { error: errorText || `Server error: ${response.status}` };
+                    }
+                    throw new Error(errorData.error || `Failed to load chat: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    const chat = data.chat;
+                    currentChatId = chat.id;
+                    conversationHistory = chat.history || [];
+                    
+                    // Clear local document state when loading a different chat
+                    activeDocuments = [];
+                    documents = [];
+                    currentDocumentId = null;
+                    updateUploadButtonState();
+                    
+                    // Render messages
+                    chatContainer.innerHTML = '';
+                    if (chat.messages && chat.messages.length > 0) {
+                        chat.messages.forEach(msg => {
+                            addMessageToUI(msg.role, msg.content, false);
+                        });
+                    } else {
+                        // If no messages, show welcome message
+                        addMessageToUI('assistant', 'Hello! I\'m your AI assistant. How can I help you today?', false);
+                    }
+                    
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    renderChatList();
+                    
+                    // Focus on input
+                    messageInput.focus();
+                } else {
+                    throw new Error(data.error || 'Failed to load chat');
+                }
+            } catch (error) {
+                console.error('Error loading chat:', error);
+                showError(error.message || 'Error loading chat. Please try again.');
+                chatContainer.innerHTML = '<div class="message ai-message"><div class="message-avatar ai-avatar">AI</div><div class="message-content">Hello! I\'m your AI assistant. How can I help you today?</div></div>';
+            }
+        }
+
+        // Delete chat from database
+        async function deleteChat(chatId, event) {
+            event.stopPropagation();
+            if (confirm('Are you sure you want to delete this chat?')) {
+                try {
+                    const response = await fetch(`/api/chats/${chatId}/delete/`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        chats = chats.filter(c => c.id !== chatId);
+                        if (currentChatId === chatId) {
+                            createNewChat();
+                        }
+                        await loadChats();
+                    }
+                } catch (error) {
+                    console.error('Error deleting chat:', error);
+                }
+            }
+        }
+
+        // Render chat list
+        function renderChatList() {
+            chatList.innerHTML = '';
+            
+            if (chats.length === 0) {
+                chatList.innerHTML = '<div class="empty-state">No chats yet</div>';
+                return;
+            }
+
+            // Sort chats by updated time (newest first)
+            const sortedChats = [...chats].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+            sortedChats.forEach(chat => {
+                const chatItem = document.createElement('div');
+                chatItem.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+                chatItem.onclick = (e) => {
+                    // Don't trigger if clicking on delete button
+                    if (e.target.closest('.chat-item-action')) {
+                        return;
+                    }
+                    loadChat(chat.id);
+                };
+                
+                chatItem.innerHTML = `
+                    <div class="chat-item-title">${escapeHtml(chat.title)}</div>
+                    <div class="chat-item-actions">
+                        <button class="chat-item-action" onclick="event.stopPropagation(); deleteChat('${chat.id}', event)" title="Delete">✕</button>
+                    </div>
+                `;
+                
+                chatList.appendChild(chatItem);
+            });
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Toggle chat history collapse
+        const chatHistoryHeader = document.getElementById('chatHistoryHeader');
+        const chatHistoryChevron = document.getElementById('chatHistoryChevron');
+        const chatListContainer = document.getElementById('chatListContainer');
+        
+        chatHistoryHeader.addEventListener('click', () => {
+            chatListContainer.classList.toggle('collapsed');
+            chatHistoryChevron.classList.toggle('collapsed');
+        });
+
+        // Save current chat to database
+        async function saveCurrentChat() {
+            if (!currentChatId) {
+                currentChatId = generateChatId();
+            }
+
+            const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
+            const title = getChatTitle(firstUserMessage ? firstUserMessage.content : 'New Chat');
+
+            const messages = Array.from(chatContainer.querySelectorAll('.message')).map(msgEl => {
+                const role = msgEl.classList.contains('user-message') ? 'user' : 'assistant';
+                const content = msgEl.querySelector('.message-content').textContent;
+                return { role, content };
+            }).filter(msg => msg.content.trim() !== ''); // Filter out empty messages
+
+            // Update local chats array for immediate UI update
+            const chat = {
+                id: currentChatId,
+                title: title,
+                history: [...conversationHistory],
+                messages: messages,
+                updatedAt: Date.now()
+            };
+
+            const existingIndex = chats.findIndex(c => c.id === currentChatId);
+            if (existingIndex >= 0) {
+                chats[existingIndex] = chat;
+            } else {
+                chats.push(chat);
+            }
+
+            // Save to database
+            await saveChatToDB(currentChatId, title, messages, conversationHistory);
+        }
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+        });
+
+        // Send message on Enter (Shift+Enter for new line)
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Send button click
+        sendButton.addEventListener('click', sendMessage);
+
+        // New chat button click
+        newChatButton.addEventListener('click', createNewChat);
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            setTimeout(() => {
+                errorMessage.classList.remove('show');
+            }, 5000);
+        }
+
+        function addMessageToUI(role, content, scroll = true) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = `message-avatar ${role}-avatar`;
+            avatar.textContent = role === 'user' ? 'You' : 'AI';
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+            
+            // For user messages, append avatar first, then content (both align right)
+            // For AI messages, append avatar first, then content (both align left)
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(messageContent);
+            
+            chatContainer.appendChild(messageDiv);
+            
+            if (scroll) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        function addMessage(role, content) {
+            addMessageToUI(role, content, true);
+        }
+
+        function showLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message ai-message';
+            loadingDiv.id = 'loadingMessage';
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar ai-avatar';
+            avatar.textContent = 'AI';
+            
+            const loadingContent = document.createElement('div');
+            loadingContent.className = 'message-content';
+            loadingContent.innerHTML = '<div class="loading"></div>';
+            
+            loadingDiv.appendChild(avatar);
+            loadingDiv.appendChild(loadingContent);
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function removeLoading() {
+            const loadingMsg = document.getElementById('loadingMessage');
+            if (loadingMsg) {
+                loadingMsg.remove();
+            }
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            // If no message but there are active documents, auto-summarize the most recent one
+            if (!message && activeDocuments.length > 0) {
+                const mostRecentDoc = activeDocuments[activeDocuments.length - 1];
+                currentDocumentId = mostRecentDoc.id;
+                
+                // Create new chat if none exists
+                if (!currentChatId) {
+                    currentChatId = generateChatId();
+                }
+                
+                // Disable input and button
+                messageInput.disabled = true;
+                sendButton.disabled = true;
+                
+                // Add user message indicating document attachment
+                addMessage('user', `Document: ${mostRecentDoc.filename}`);
+                
+                // Add to conversation history
+                conversationHistory.push({
+                    role: 'user',
+                    content: `Document: ${mostRecentDoc.filename}`
+                });
+                
+                // Show loading indicator
+                showLoading();
+                
+                try {
+                    // Summarize the document
+                    const response = await fetch(`/api/documents/${currentDocumentId}/summarize/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken()
+                        },
+                        body: JSON.stringify({ 
+                            document_id: currentDocumentId,
+                            chat_id: currentChatId // Send current chat_id so backend can save messages
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        let errorData;
+                        try {
+                            errorData = JSON.parse(errorText);
+                        } catch (e) {
+                            errorData = { error: errorText || `Server error: ${response.status}` };
+                        }
+                        throw new Error(errorData.error || 'Failed to summarize document');
+                    }
+
+                    const data = await response.json();
+
+                    if (data.status === 'success') {
+                        // Add summary to chat
+                        addMessage('ai', `Document "${data.filename}" is now ready! Here's what it contains:\n\n${data.summary}\n\nYou can now ask me any questions about this document.`);
+                        await saveCurrentChat();
+                    }
+                } catch (error) {
+                    console.error('Error summarizing document:', error);
+                    showError('Failed to summarize document');
+                    addMessage('ai', 'Sorry, I encountered an error while summarizing the document. Please try again.');
+                } finally {
+                    // Re-enable input and button
+                    messageInput.disabled = false;
+                    sendButton.disabled = false;
+                    removeLoading();
+                }
+                return;
+            }
+            
+            // If no message and no documents, don't send
+            if (!message) {
+                return;
+            }
+
+            // Create new chat if none exists
+            if (!currentChatId) {
+                currentChatId = generateChatId();
+            }
+
+            // Disable input and button
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+            
+            // Check for position-based summarize requests
+            const messageLower = message.toLowerCase();
+            let summarizePosition = null;
+            if (messageLower.includes('summarize') || messageLower.includes('summary')) {
+                if (messageLower.includes('first document') || messageLower.includes('document 1') || messageLower.includes('1st document')) {
+                    summarizePosition = 'first';
+                } else if (messageLower.includes('second document') || messageLower.includes('document 2') || messageLower.includes('2nd document')) {
+                    summarizePosition = 'second';
+                }
+            }
+            
+            // If position-based summarize request, handle it
+            if (summarizePosition && activeDocuments.length > 0) {
+                const docIndex = summarizePosition === 'first' ? 0 : 1;
+                if (docIndex < activeDocuments.length) {
+                    const targetDoc = activeDocuments[docIndex];
+                    currentDocumentId = targetDoc.id;
+                    
+                    // Add user message to UI
+                    addMessage('user', message);
+                    
+                    // Add to conversation history
+                    conversationHistory.push({
+                        role: 'user',
+                        content: message
+                    });
+                    
+                    // Clear input
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+                    
+                    // Show loading indicator
+                    showLoading();
+                    
+                    try {
+                        const response = await fetch(`/api/documents/${currentDocumentId}/summarize/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCsrfToken()
+                            },
+                            body: JSON.stringify({ 
+                                document_id: currentDocumentId,
+                                position: summarizePosition,
+                                chat_id: currentChatId // Send current chat_id so backend can save messages
+                            })
+                        });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            let errorData;
+                            try {
+                                errorData = JSON.parse(errorText);
+                            } catch (e) {
+                                errorData = { error: errorText || `Server error: ${response.status}` };
+                            }
+                            throw new Error(errorData.error || 'Failed to summarize document');
+                        }
+
+                        const data = await response.json();
+
+                        if (data.status === 'success') {
+                            // Add summary to chat
+                            addMessage('ai', `**${data.filename}**\n\n${data.summary}`);
+                            await saveCurrentChat();
+                        }
+                    } catch (error) {
+                        console.error('Error summarizing document:', error);
+                        showError('Failed to summarize document');
+                        addMessage('ai', 'Sorry, I encountered an error while summarizing the document. Please try again.');
+                    } finally {
+                        // Re-enable input and button
+                        messageInput.disabled = false;
+                        sendButton.disabled = false;
+                        removeLoading();
+                    }
+                    return;
+                }
+            }
+            
+            // Add user message to UI
+            addMessage('user', message);
+            
+            // Add to conversation history
+            conversationHistory.push({
+                role: 'user',
+                content: message
+            });
+            
+            // Clear input
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Show loading indicator
+            showLoading();
+
+            try {
+                // If a document is selected, try to use document Q&A
+                let response, data;
+                if (currentDocumentId) {
+                    const doc = documents.find(d => d.id === currentDocumentId);
+                    
+                    // Check if message is asking about the document or requesting summary
+                    const messageLower = message.toLowerCase();
+                    const isQuestion = message.includes('?') || 
+                                     messageLower.includes('what') ||
+                                     messageLower.includes('how') ||
+                                     messageLower.includes('why') ||
+                                     messageLower.includes('when') ||
+                                     messageLower.includes('where') ||
+                                     messageLower.includes('who') ||
+                                     messageLower.includes('which') ||
+                                     messageLower.includes('explain') ||
+                                     messageLower.includes('summarize') ||
+                                     messageLower.includes('summary') ||
+                                     messageLower.includes('tell me') ||
+                                     messageLower.includes('describe') ||
+                                     messageLower.includes('analyze') ||
+                                     messageLower.includes('extract') ||
+                                     messageLower.includes('find') ||
+                                     messageLower.includes('show me') ||
+                                     messageLower.includes('what does it say') ||
+                                     messageLower.includes('what is in') ||
+                                     messageLower.includes('what are');
+                    
+                    // If document has text and message seems document-related, use document Q&A
+                    if (doc && doc.has_text && isQuestion) {
+                        // Use document Q&A endpoint
+                        try {
+                            response = await fetch(`/api/documents/${currentDocumentId}/ask/`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': getCsrfToken()
+                                },
+                                body: JSON.stringify({
+                                    document_id: currentDocumentId,
+                                    question: message,
+                                    chat_id: currentChatId // Send current chat_id so backend can save messages
+                                })
+                            });
+                            
+                            if (!response.ok) {
+                                const errorText = await response.text();
+                                let errorData;
+                                try {
+                                    errorData = JSON.parse(errorText);
+                                } catch (e) {
+                                    errorData = { error: errorText || `Server error: ${response.status}` };
+                                }
+                                throw new Error(errorData.error || 'Document Q&A failed');
+                            }
+                            
+                            data = await response.json();
+                            
+                            // Update chat_id if backend returned one (for new chats)
+                            if (data.chat_id && !currentChatId) {
+                                currentChatId = data.chat_id;
+                            }
+                            
+                            // Remove loading
+                            removeLoading();
+                            
+                            // Add AI response to UI
+                            addMessage('ai', data.answer);
+                            
+                            // Add to conversation history
+                            conversationHistory.push({
+                                role: 'assistant',
+                                content: data.answer
+                            });
+
+                            // Note: Messages are now automatically saved by the backend
+                            // We still call saveCurrentChat to update the title and sync UI
+                            await saveCurrentChat();
+                            
+                            // Re-enable input and button
+                            messageInput.disabled = false;
+                            sendButton.disabled = false;
+                            messageInput.focus();
+                            return;
+                        } catch (docError) {
+                            // Fall through to regular chat if document Q&A fails
+                            console.log('Document Q&A failed, using regular chat:', docError);
+                            // Continue to regular chat flow
+                        }
+                    }
+                }
+                
+                // Regular chat flow
+                response = await fetch('/api/chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: conversationHistory.slice(0, -1), // Send history without current message
+                        chat_id: currentChatId // Send current chat_id so backend can use it
+                    })
+                });
+
+                data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to get response');
+                }
+
+                // Update chat_id if backend returned one (for new chats)
+                if (data.chat_id && !currentChatId) {
+                    currentChatId = data.chat_id;
+                }
+
+                // Remove loading
+                removeLoading();
+                
+                // Add AI response to UI
+                addMessage('ai', data.response);
+                
+                // Add to conversation history
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: data.response
+                });
+
+                // Note: Messages are now automatically saved by the backend
+                // We still call saveCurrentChat to update the title and sync UI
+                await saveCurrentChat();
+
+            } catch (error) {
+                removeLoading();
+                showError(error.message || 'An error occurred. Please try again.');
+                console.error('Error:', error);
+            } finally {
+                // Re-enable input and button
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        // Make deleteChat available globally
+        window.deleteChat = deleteChat;
+
+        // Document upload functionality
+        const uploadButton = document.getElementById('uploadButton');
+        const fileInput = document.getElementById('fileInput');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const fileAttachmentPopup = document.getElementById('fileAttachmentPopup');
+        const fileAttachmentsContainer = document.getElementById('fileAttachmentsContainer');
+        let currentDocumentId = null;
+        let documents = [];
+        let activeDocuments = []; // Track active documents (up to 2) for display and context
+
+        // Upload button click
+        uploadButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change - handle multiple files
+        fileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            // Upload files sequentially
+            for (const file of files) {
+                await uploadDocument(file);
+            }
+            fileInput.value = ''; // Reset input
+        });
+
+
+
+        // Upload document function
+        async function uploadDocument(file) {
+            // Validate file size (10MB)
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showError(`File "${file.name}" exceeds 10MB limit`);
+                return;
+            }
+
+            // Validate file type
+            const allowedTypes = ['.pdf', '.doc', '.docx', '.txt', '.md', '.csv', '.xlsx', '.xls', '.png', '.jpg', '.jpeg', '.gif', '.bmp'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            if (!allowedTypes.includes(fileExtension)) {
+                showError(`File type "${fileExtension}" is not supported`);
+                return;
+            }
+
+            // Disable upload button
+            uploadButton.disabled = true;
+            uploadProgress.textContent = `Uploading ${file.name}...`;
+            uploadProgress.classList.add('show');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                // Send current chat_id so documents are associated with this chat
+                if (currentChatId) {
+                    formData.append('chat_id', currentChatId);
+                }
+
+                const response = await fetch('/api/documents/upload/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = { error: errorText || `Server error: ${response.status}` };
+                    }
+                    throw new Error(errorData.error || 'Upload failed');
+                }
+
+                const data = await response.json();
+
+                uploadProgress.textContent = 'Upload successful! Processing document...';
+                
+                // Add document to list
+                const documentData = {
+                    id: data.document_id,
+                    filename: data.filename,
+                    file_type: data.file_type,
+                    file_size: data.file_size,
+                    uploaded_at: Date.now(),
+                    has_text: data.extracted_text_length > 0
+                };
+                
+                // Check if document already exists
+                const existingIndex = documents.findIndex(d => d.id === data.document_id);
+                if (existingIndex >= 0) {
+                    documents[existingIndex] = documentData;
+                } else {
+                    documents.push(documentData);
+                }
+
+                // Automatically set as current document (most recent)
+                currentDocumentId = data.document_id;
+                
+                // Update active documents list (up to 2 most recent)
+                activeDocuments = documents.filter(d => d.has_text).slice(-2);
+                updateUploadButtonState();
+
+                // Auto-summarize the document if it has text
+                if (data.extracted_text_length > 0) {
+                    uploadProgress.textContent = 'Generating summary...';
+                    await summarizeCurrentDocument();
+                } else {
+                    // Add message about document upload
+                    addMessage('user', `Uploaded document: ${data.filename}`);
+                    addMessage('ai', `Document "${data.filename}" uploaded successfully! However, I couldn't extract text from this file type. You can still use it for reference.`);
+                    await saveCurrentChat();
+                }
+
+                uploadProgress.textContent = 'Document ready!';
+                setTimeout(() => {
+                    uploadProgress.classList.remove('show');
+                }, 2000);
+
+            } catch (error) {
+                showError(error.message || `Failed to upload "${file.name}"`);
+                uploadProgress.classList.remove('show');
+            } finally {
+                uploadButton.disabled = false;
+            }
+        }
+
+
+        // Update upload button state and file attachment popup
+        function updateUploadButtonState() {
+            // Get active documents (up to 2 most recent with text)
+            activeDocuments = documents.filter(d => d.has_text).slice(-2);
+            
+            if (activeDocuments.length > 0) {
+                uploadButton.classList.add('has-document');
+                renderFileAttachments();
+                fileAttachmentPopup.classList.add('show');
+                // Set current document to the most recent one
+                currentDocumentId = activeDocuments[activeDocuments.length - 1].id;
+            } else {
+                uploadButton.classList.remove('has-document');
+                fileAttachmentPopup.classList.remove('show');
+                currentDocumentId = null;
+            }
+        }
+
+        // Render multiple file attachments
+        function renderFileAttachments() {
+            fileAttachmentsContainer.innerHTML = '';
+            
+            activeDocuments.forEach((doc, index) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'file-attachment-bubble';
+                
+                // Determine icon class based on file type
+                let iconClass = 'default';
+                let fileTypeText = 'Document';
+                
+                if (doc.file_type) {
+                    if (doc.file_type.includes('pdf')) {
+                        iconClass = 'pdf';
+                        fileTypeText = 'PDF';
+                    } else if (doc.file_type.includes('word') || doc.file_type.includes('document')) {
+                        iconClass = 'word';
+                        fileTypeText = 'Word Document';
+                    } else if (doc.file_type.includes('excel') || doc.file_type.includes('spreadsheet')) {
+                        iconClass = 'excel';
+                        fileTypeText = 'Excel';
+                    } else if (doc.file_type.includes('text')) {
+                        iconClass = 'text';
+                        fileTypeText = 'Text File';
+                    } else {
+                        fileTypeText = doc.file_type.split('/').pop().toUpperCase() || 'Document';
+                    }
+                }
+                
+                bubble.innerHTML = `
+                    <div class="file-attachment-icon ${iconClass}"></div>
+                    <div class="file-attachment-info">
+                        <div class="file-attachment-name" title="${escapeHtml(doc.filename)}">${escapeHtml(doc.filename)}</div>
+                        <div class="file-attachment-type">${fileTypeText}</div>
+                    </div>
+                    <button class="file-attachment-remove" onclick="removeFileAttachment(${doc.id})" title="Remove attachment">×</button>
+                `;
+                
+                fileAttachmentsContainer.appendChild(bubble);
+            });
+        }
+
+        // Remove file attachment
+        async function removeFileAttachment(documentId) {
+            try {
+                // Remove from active documents
+                activeDocuments = activeDocuments.filter(d => d.id !== documentId);
+                documents = documents.filter(d => d.id !== documentId);
+                
+                // If this was the current document, clear it
+                if (currentDocumentId === documentId) {
+                    currentDocumentId = null;
+                    // Set to most recent remaining document if any
+                    if (activeDocuments.length > 0) {
+                        currentDocumentId = activeDocuments[activeDocuments.length - 1].id;
+                    }
+                }
+                
+                // Delete from server
+                const response = await fetch(`/api/documents/${documentId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+                
+                updateUploadButtonState();
+            } catch (error) {
+                console.error('Error removing file attachment:', error);
+                updateUploadButtonState();
+            }
+        }
+
+        // Make removeFileAttachment globally available
+        window.removeFileAttachment = removeFileAttachment;
+
+        // Get CSRF token
+        function getCsrfToken() {
+            // Try meta tag first
+            const metaToken = document.querySelector('meta[name="csrf-token"]');
+            if (metaToken) {
+                return metaToken.getAttribute('content');
+            }
+            // Fallback to cookie
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'csrftoken') {
+                    return value;
+                }
+            }
+            return '';
+        }
+
+        // Load documents
+        async function loadDocuments() {
+            try {
+                const response = await fetch('/api/documents/');
+                if (!response.ok) {
+                    throw new Error(`Failed to load documents: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.status === 'success') {
+                    documents = data.documents;
+                    // Update active documents (up to 2 most recent with text)
+                    activeDocuments = documents.filter(d => d.has_text).slice(-2);
+                    if (activeDocuments.length > 0) {
+                        currentDocumentId = activeDocuments[activeDocuments.length - 1].id;
+                    }
+                    updateUploadButtonState();
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+            }
+        }
+
+
+        // Select document for current conversation
+        async function selectDocument(documentId) {
+            currentDocumentId = documentId;
+            updateUploadButtonState(); // This will also update the popup
+            
+            const doc = documents.find(d => d.id === documentId);
+            if (doc) {
+                // Add message to chat about document selection
+                addMessage('user', `Using document: ${doc.filename}`);
+                if (doc.has_text) {
+                    addMessage('ai', `Document "${doc.filename}" is now active! You can ask me questions about it or request a summary.`);
+                } else {
+                    addMessage('ai', `Document "${doc.filename}" is now active! However, I couldn't extract text from this file type.`);
+                }
+                await saveCurrentChat();
+            }
+        }
+
+        // Summarize document
+        async function summarizeDocument(documentId) {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Summarizing...';
+
+            try {
+                const response = await fetch(`/api/documents/${documentId}/summarize/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ document_id: documentId })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Summarization failed');
+                }
+
+                // Add summary to chat
+                addMessage('user', `Summarize: ${data.filename}`);
+                addMessage('ai', data.summary);
+
+                // Save chat
+                await saveCurrentChat();
+
+            } catch (error) {
+                showError(error.message || 'Failed to summarize document');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        // Summarize current document
+        async function summarizeCurrentDocument() {
+            if (!currentDocumentId) return;
+
+            try {
+                const response = await fetch(`/api/documents/${currentDocumentId}/summarize/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ document_id: currentDocumentId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Add summary to chat
+                    addMessage('user', `Document uploaded: ${data.filename}`);
+                    addMessage('ai', `Document uploaded successfully! Here's a summary:\n\n${data.summary}`);
+                    await saveCurrentChat();
+                }
+            } catch (error) {
+                console.error('Error summarizing document:', error);
+            }
+        }
+
+        // Ask about document
+        async function askAboutDocument(documentId) {
+            const question = prompt('What would you like to know about this document?');
+            if (!question || !question.trim()) return;
+
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            try {
+                const response = await fetch(`/api/documents/${documentId}/ask/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({
+                        document_id: documentId,
+                        question: question
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to get answer');
+                }
+
+                // Add Q&A to chat
+                addMessage('user', `Question about ${data.filename}: ${question}`);
+                addMessage('ai', data.answer);
+
+                // Save chat
+                await saveCurrentChat();
+
+            } catch (error) {
+                showError(error.message || 'Failed to get answer');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        // Delete document
+        async function deleteDocument(documentId) {
+            if (!confirm('Are you sure you want to delete this document?')) return;
+
+            try {
+                const response = await fetch(`/api/documents/${documentId}/delete/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken()
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    documents = documents.filter(d => d.id !== documentId);
+                    if (currentDocumentId === documentId) {
+                        currentDocumentId = null;
+                    }
+                    updateUploadButtonState();
+                }
+            } catch (error) {
+                showError('Failed to delete document');
+            }
+        }
+
+        // Make functions globally available
+        window.summarizeDocument = summarizeDocument;
+        window.askAboutDocument = askAboutDocument;
+        window.selectDocument = selectDocument;
+        window.deleteDocument = deleteDocument;
+
+
+        // Set user avatar initials
+        function setUserAvatar() {
+            const userName = document.getElementById('userName').textContent.trim();
+            const avatar = document.getElementById('userAvatar');
+            if (userName) {
+                const initials = userName.substring(0, 2).toUpperCase();
+                avatar.textContent = initials;
+            }
+        }
+
+        // Check authentication status on page load
+        async function checkAuthentication() {
+            try {
+                const response = await fetch('/api/chats/');
+                if (response.status === 403 || response.status === 401) {
+                    // User is not authenticated, redirect to login
+                    window.location.href = '/login/';
+                    return false;
+                }
+                if (!response.ok) {
+                    // If we can't verify auth, redirect to login
+                    window.location.href = '/login/';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                // On error, redirect to login
+                window.location.href = '/login/';
+                return false;
+            }
+        }
+
+        // Initialize - check authentication first, then load chats and documents
+        checkAuthentication().then((isAuthenticated) => {
+            if (isAuthenticated) {
+                setUserAvatar();
+                loadChats().then(() => {
+                    loadDocuments().then(() => {
+                        createNewChat();
+                        updateUploadButtonState();
+                        messageInput.focus();
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
